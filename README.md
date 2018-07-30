@@ -569,6 +569,32 @@ render status: :forbidden
     end
   end
   ```
+  
+  **Sumatosoft**
+  For long queries user query objects
+  ```
+   module Queries
+    module Reports
+      module Modules
+        class ByPropsSourceFactor < ::Queries::Base
+          SQL = <<-SQL.squish
+            SELECT *
+            FROM reports_modules, json_array_elements(reports_modules.props -> 'source' -> 'factors') factors
+            WHERE factors ->> 'id' = ?
+          SQL
+
+          def initialize(relation = ::Reports::Module.all)
+            @relation = relation
+          end
+
+          def call(id)
+            ::Reports::Module.find_by_sql([SQL, id.to_s])
+          end
+        end
+      end
+    end
+   end
+  ```
 
 * <a name="callbacks-order"></a>
   Order callback declarations in the order, in which they will be executed. For
@@ -607,6 +633,25 @@ render status: :forbidden
     after_save :after_save_callback
     after_commit/after_rollback :after_commit_callback
   end
+  ```
+
+  **Sumatosoft**
+  For long callbacks use callbacks objects
+  ```
+   class Person
+     before_save ::Callbacks::Models::People::SomeAction.new
+   end
+
+   module Callbacks
+    module Models
+      module People
+        class SomeAction
+          def before_save(record)
+          end
+        end
+      end
+    end
+   end
   ```
 
 * <a name="beware-skip-model-validations"></a>
@@ -768,6 +813,17 @@ render status: :forbidden
     ...
   else
     ...
+  end
+  ```
+  
+  **Sumatosoft**
+  ```
+  def update
+    user.update!(user_params)
+    redirect_to users_url
+  rescue ActiveRecord::RecordInvalid => error
+    Rails.logger.error(error.message)
+    render :edit
   end
   ```
 
